@@ -7,6 +7,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useEffect, useState } from "react";
 
 import Dashboard from "@/pages/dashboard";
 import Employees from "@/pages/employees";
@@ -21,7 +22,21 @@ import Register from "@/pages/register";
 import NotFound from "@/pages/not-found";
 
 function Router() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | undefined>(undefined);
+
+  // Check authentication on mount and location changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem("token");
+      setIsAuthenticated(!!token);
+      
+      // Redirect to login if not authenticated and not on public routes
+      if (!token && location !== "/login" && location !== "/register") {
+        setLocation("/login");
+      }
+    }
+  }, [location, setLocation]);
 
   // Public routes (no sidebar)
   if (location === "/login" || location === "/register") {
@@ -30,6 +45,24 @@ function Router() {
         <Route path="/login" component={Login} />
         <Route path="/register" component={Register} />
       </Switch>
+    );
+  }
+
+  // Show loading while checking auth
+  if (isAuthenticated === undefined) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
+
+  // Redirect to login handled in useEffect, show loading
+  if (!isAuthenticated) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-muted-foreground">Redirecting...</div>
+      </div>
     );
   }
 

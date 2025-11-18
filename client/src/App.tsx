@@ -16,6 +16,8 @@ import Payslips from "@/pages/payslips";
 import Reports from "@/pages/reports";
 import Leave from "@/pages/leave";
 import Advances from "@/pages/advances";
+import Attendance from "@/pages/attendance";
+import Overtime from "@/pages/overtime";
 import Settings from "@/pages/settings";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
@@ -90,6 +92,8 @@ function Router() {
               <Route path="/reports" component={Reports} />
               <Route path="/leave" component={Leave} />
               <Route path="/advances" component={Advances} />
+              <Route path="/attendance" component={Attendance} />
+              <Route path="/overtime" component={Overtime} />
               <Route path="/settings" component={Settings} />
               <Route component={NotFound} />
             </Switch>

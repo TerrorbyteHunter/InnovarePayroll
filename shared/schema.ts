@@ -298,6 +298,10 @@ export const insertAttendanceRecordSchema = createInsertSchema(attendanceRecords
   createdAt: true,
   approvedBy: true,
   approvedAt: true,
+}).extend({
+  hoursWorked: z.union([z.string(), z.number(), z.null()]).optional().transform(val => 
+    val == null ? null : typeof val === 'string' ? val : String(val)
+  ),
 });
 
 export const insertOvertimeEntrySchema = createInsertSchema(overtimeEntries).omit({
@@ -305,11 +309,25 @@ export const insertOvertimeEntrySchema = createInsertSchema(overtimeEntries).omi
   createdAt: true,
   approvedBy: true,
   approvedAt: true,
+}).extend({
+  hours: z.union([z.string(), z.number()]).transform(val => 
+    typeof val === 'string' ? val : String(val)
+  ),
+  rateMultiplier: z.union([z.string(), z.number()]).transform(val => 
+    typeof val === 'string' ? val : String(val)
+  ),
 });
 
 export const insertPayrollAdjustmentSchema = createInsertSchema(payrollAdjustments).omit({
   id: true,
   createdAt: true,
+}).extend({
+  amount: z.union([z.string(), z.number()]).transform(val => 
+    typeof val === 'string' ? val : String(val)
+  ),
+  hours: z.union([z.string(), z.number(), z.null()]).optional().transform(val => 
+    val == null ? null : typeof val === 'string' ? val : String(val)
+  ),
 });
 
 // Types

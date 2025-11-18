@@ -6,7 +6,8 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { 
   insertUserSchema, loginSchema, insertEmployeeSchema,
-  insertPayrollRunSchema, insertLeaveRequestSchema, insertAdvanceSchema
+  insertPayrollRunSchema, insertLeaveRequestSchema, insertAdvanceSchema,
+  insertAttendanceRecordSchema, insertOvertimeEntrySchema
 } from "@shared/schema";
 
 const JWT_SECRET = process.env.SESSION_SECRET || "innovare-payroll-secret-key";
@@ -672,6 +673,186 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       res.json(newConfig);
+    } catch (error) {
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  // Attendance Routes
+  app.get("/api/attendance", authenticateToken, async (req, res) => {
+    try {
+      const records = await storage.getAttendanceRecords();
+      res.json(records);
+    } catch (error) {
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.post("/api/attendance", authenticateToken, async (req, res) => {
+    try {
+      const result = insertAttendanceRecordSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid input", errors: result.error });
+      }
+
+      const record = await storage.createAttendanceRecord(result.data);
+
+      await storage.createAuditLog({
+        userId: (req as any).user.id,
+        action: "CREATE_ATTENDANCE_RECORD",
+        entity: "AttendanceRecord",
+        entityId: record.id,
+        beforeSnapshot: null,
+        afterSnapshot: record,
+        metadata: null,
+      });
+
+      res.status(201).json(record);
+    } catch (error) {
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.patch("/api/attendance/:id", authenticateToken, async (req, res) => {
+    try {
+      const before = await storage.getAttendanceRecord(req.params.id);
+      if (!before) {
+        return res.status(404).json({ message: "Attendance record not found" });
+      }
+
+      const { status, ...otherData } = req.body;
+      
+      // If status is being updated, validate it
+      if (status !== undefined) {
+        const validStatuses = ['pending', 'approved', 'rejected'];
+        if (!validStatuses.includes(status)) {
+          return res.status(400).json({ message: "Invalid status value" });
+        }
+        
+        // Use status update method
+        const record = await storage.updateAttendanceStatus(
+          req.params.id, 
+          status, 
+          (req as any).user.id
+        );
+
+        await storage.createAuditLog({
+          userId: (req as any).user.id,
+          action: "UPDATE_ATTENDANCE_STATUS",
+          entity: "AttendanceRecord",
+          entityId: record.id,
+          beforeSnapshot: before,
+          afterSnapshot: record,
+          metadata: { status },
+        });
+
+        res.json(record);
+      } else {
+        // Regular update
+        const record = await storage.updateAttendanceRecord(req.params.id, otherData);
+
+        await storage.createAuditLog({
+          userId: (req as any).user.id,
+          action: "UPDATE_ATTENDANCE_RECORD",
+          entity: "AttendanceRecord",
+          entityId: record.id,
+          beforeSnapshot: before,
+          afterSnapshot: record,
+          metadata: null,
+        });
+
+        res.json(record);
+      }
+    } catch (error) {
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  // Overtime Routes
+  app.get("/api/overtime", authenticateToken, async (req, res) => {
+    try {
+      const entries = await storage.getOvertimeEntries();
+      res.json(entries);
+    } catch (error) {
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.post("/api/overtime", authenticateToken, async (req, res) => {
+    try {
+      const result = insertOvertimeEntrySchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid input", errors: result.error });
+      }
+
+      const entry = await storage.createOvertimeEntry(result.data);
+
+      await storage.createAuditLog({
+        userId: (req as any).user.id,
+        action: "CREATE_OVERTIME_ENTRY",
+        entity: "OvertimeEntry",
+        entityId: entry.id,
+        beforeSnapshot: null,
+        afterSnapshot: entry,
+        metadata: null,
+      });
+
+      res.status(201).json(entry);
+    } catch (error) {
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.patch("/api/overtime/:id", authenticateToken, async (req, res) => {
+    try {
+      const before = await storage.getOvertimeEntry(req.params.id);
+      if (!before) {
+        return res.status(404).json({ message: "Overtime entry not found" });
+      }
+
+      const { status, ...otherData } = req.body;
+      
+      // If status is being updated, validate it
+      if (status !== undefined) {
+        const validStatuses = ['pending', 'approved', 'rejected'];
+        if (!validStatuses.includes(status)) {
+          return res.status(400).json({ message: "Invalid status value" });
+        }
+        
+        // Use status update method
+        const entry = await storage.updateOvertimeStatus(
+          req.params.id, 
+          status, 
+          (req as any).user.id
+        );
+
+        await storage.createAuditLog({
+          userId: (req as any).user.id,
+          action: "UPDATE_OVERTIME_STATUS",
+          entity: "OvertimeEntry",
+          entityId: entry.id,
+          beforeSnapshot: before,
+          afterSnapshot: entry,
+          metadata: { status },
+        });
+
+        res.json(entry);
+      } else {
+        // Regular update
+        const entry = await storage.updateOvertimeEntry(req.params.id, otherData);
+
+        await storage.createAuditLog({
+          userId: (req as any).user.id,
+          action: "UPDATE_OVERTIME_ENTRY",
+          entity: "OvertimeEntry",
+          entityId: entry.id,
+          beforeSnapshot: before,
+          afterSnapshot: entry,
+          metadata: null,
+        });
+
+        res.json(entry);
+      }
     } catch (error) {
       res.status(500).json({ message: "Server error" });
     }

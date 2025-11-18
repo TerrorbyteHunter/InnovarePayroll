@@ -6,6 +6,7 @@ import {
   Receipt,
   Calendar,
   DollarSign,
+  Clock,
   Settings,
   LogOut,
 } from "lucide-react";
@@ -60,6 +61,16 @@ const menuItems = [
     title: "Advances",
     url: "/advances",
     icon: DollarSign,
+  },
+  {
+    title: "Attendance",
+    url: "/attendance",
+    icon: Clock,
+  },
+  {
+    title: "Overtime",
+    url: "/overtime",
+    icon: Clock,
   },
   {
     title: "Settings",

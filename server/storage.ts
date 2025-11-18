@@ -285,7 +285,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createAdvance(insertAdvance: InsertAdvance): Promise<Advance> {
-    const [advance] = await db.insert(advances).values(insertAdvance).returning();
+    const [advance] = await db.insert(advances).values({
+      ...insertAdvance,
+      remainingBalance: insertAdvance.amount,
+    }).returning();
     return advance;
   }
 
@@ -334,6 +337,16 @@ export class DatabaseStorage implements IStorage {
     return record;
   }
 
+  async updateAttendanceStatus(id: string, status: string, approvedBy?: string): Promise<AttendanceRecord> {
+    const updateData: Partial<AttendanceRecord> = {
+      status,
+      approvedBy: approvedBy || null,
+      approvedAt: status !== 'pending' ? new Date() : null,
+    };
+    const [record] = await db.update(attendanceRecords).set(updateData).where(eq(attendanceRecords.id, id)).returning();
+    return record;
+  }
+
   // Overtime Entries
   async getOvertimeEntries(): Promise<OvertimeEntry[]> {
     return await db.select().from(overtimeEntries).orderBy(desc(overtimeEntries.date));
@@ -355,6 +368,16 @@ export class DatabaseStorage implements IStorage {
 
   async updateOvertimeEntry(id: string, data: Partial<OvertimeEntry>): Promise<OvertimeEntry> {
     const [entry] = await db.update(overtimeEntries).set(data).where(eq(overtimeEntries.id, id)).returning();
+    return entry;
+  }
+
+  async updateOvertimeStatus(id: string, status: string, approvedBy?: string): Promise<OvertimeEntry> {
+    const updateData: Partial<OvertimeEntry> = {
+      status,
+      approvedBy: approvedBy || null,
+      approvedAt: status !== 'pending' ? new Date() : null,
+    };
+    const [entry] = await db.update(overtimeEntries).set(updateData).where(eq(overtimeEntries.id, id)).returning();
     return entry;
   }
 

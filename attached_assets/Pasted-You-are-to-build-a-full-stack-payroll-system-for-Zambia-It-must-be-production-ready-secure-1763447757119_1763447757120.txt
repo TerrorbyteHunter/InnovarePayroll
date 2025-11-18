@@ -1,0 +1,88 @@
+You are to build a **full-stack payroll system for Zambia**.  
+It must be **production-ready, secure, and user-friendly**, with the following features:
+
+### Core Features
+- **Automatic statutory calculations**:
+  - PAYE (progressive tax bands, reliefs, thresholds)
+  - NAPSA (employee/employer contributions, caps)
+  - NHIMA (health insurance contributions)
+  - SDL (optional, configurable)
+- **Instant payslips**:
+  - PDF/HTML generation
+  - Employee portal for download
+- **Reports**:
+  - PAYE remittance summary
+  - NAPSA contribution schedule
+  - NHIMA contribution schedule
+  - Payroll journal, variance reports
+- **Leave & advance tracking**:
+  - Leave policies, balances, approvals
+  - Salary advance requests, repayment schedules
+- **Exports & uploads**:
+  - Generate compliant CSV/Excel/XML files for ZRA, NAPSA, NHIMA portals
+  - Bank payment files (configurable per bank)
+- **Audit & compliance**:
+  - Immutable logs of payroll runs and edits
+  - Configurable statutory rules with effective dates
+  - Alerts for deadlines and anomalies
+
+### Tech Stack
+- **Frontend**: React + TypeScript, Tailwind CSS, React Router, React Query
+- **Backend**: Node.js (NestJS or Express + TypeScript)
+- **Database**: PostgreSQL with Prisma ORM
+- **Auth & Security**:
+  - JWT authentication with refresh tokens
+  - Role-based access control (Admin, Payroll Officer, HR Officer, Auditor)
+  - Password hashing (bcrypt/scrypt)
+- **DevOps**:
+  - Docker Compose for local dev
+  - Production-ready Dockerfiles
+  - CI/CD pipeline with tests
+- **Files/Exports**:
+  - Local + S3-compatible storage for payslips and reports
+
+### Data Model (Prisma Schema Outline)
+- Company (TIN, statutory IDs, bank details)
+- User (role-based access)
+- Employee (personal info, salary structure, statutory flags)
+- Compensation (base, allowances, deductions)
+- PayrollRun (period, totals, approvals)
+- Payslip (gross, net, statutory breakdown, PDF URL)
+- StatutoryConfig (PAYE bands, NAPSA caps, NHIMA rate, SDL toggle)
+- LeavePolicy, LeaveBalance, LeaveRequest
+- Advance (amount, repayment schedule)
+- Report (type, file URL, metadata)
+- AuditLog (actor, action, before/after snapshot)
+
+### API Endpoints
+- Auth: register, login, refresh
+- Employees: CRUD
+- Payroll: run, approve, lock
+- Payslips: generate, download
+- Reports: generate, export
+- Leave: policies, requests, balances
+- Advances: request, approve, track
+- Exports: ZRA, NAPSA, NHIMA, bank
+- Audit: query logs
+
+### UX Requirements
+- Sidebar navigation: Dashboard, Employees, Payroll, Payslips, Reports, Leave, Advances, Settings
+- Dashboard: statutory deadlines, pending approvals, alerts
+- Payroll wizard: step-by-step run, preview, approve, generate payslips, export files
+- Accessibility: keyboard-friendly, ARIA roles, high-contrast option
+
+### Deliverables
+- Running Dockerized app with seed data
+- Complete Prisma schema and migrations
+- Documented REST API (OpenAPI)
+- Frontend with production-grade UX
+- Unit tests for PAYE, NAPSA, NHIMA calculations
+- Sample exports for ZRA, NAPSA, NHIMA, and bank files
+
+### Acceptance Criteria
+- End-to-end payroll run produces correct payslips and statutory reports
+- Non-technical user can onboard employees, run payroll, and generate reports easily
+- Configurable statutory rules with effective dates
+- Transactional, auditable, and reliable system
+
+**Instruction:** Generate the full project structure, backend services, frontend UI, database schema, and seed data. Ensure the system is fully operational and compliant with Zambian payroll requirements.

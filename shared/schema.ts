@@ -196,6 +196,51 @@ export const auditLogs = pgTable("audit_logs", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+// Attendance Records
+export const attendanceRecords = pgTable("attendance_records", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  employeeId: varchar("employee_id").notNull().references(() => employees.id),
+  date: text("date").notNull(),
+  type: text("type").notNull(), // Present, Absent, Late, HalfDay, Sick, Leave
+  hoursWorked: decimal("hours_worked", { precision: 5, scale: 2 }),
+  reason: text("reason"),
+  status: text("status").notNull().default('Pending'), // Pending, Approved, Rejected
+  approvedBy: varchar("approved_by").references(() => users.id),
+  approvedAt: timestamp("approved_at"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Overtime Entries
+export const overtimeEntries = pgTable("overtime_entries", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  employeeId: varchar("employee_id").notNull().references(() => employees.id),
+  date: text("date").notNull(),
+  hours: decimal("hours", { precision: 5, scale: 2 }).notNull(),
+  rateMultiplier: decimal("rate_multiplier", { precision: 3, scale: 2 }).notNull().default('1.5'), // 1.5x, 2x, etc.
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  reason: text("reason"),
+  status: text("status").notNull().default('Pending'), // Pending, Approved, Rejected
+  approvedBy: varchar("approved_by").references(() => users.id),
+  approvedAt: timestamp("approved_at"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Payroll Adjustments
+export const payrollAdjustments = pgTable("payroll_adjustments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  payrollRunId: varchar("payroll_run_id").notNull().references(() => payrollRuns.id),
+  employeeId: varchar("employee_id").notNull().references(() => employees.id),
+  type: text("type").notNull(), // Attendance, Overtime, Bonus, Penalty, Other
+  description: text("description").notNull(),
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  isAddition: boolean("is_addition").notNull(), // true for additions, false for deductions
+  sourceType: text("source_type"), // AttendanceRecord, OvertimeEntry, Manual
+  sourceId: varchar("source_id"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 // Zod Schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true }).extend({
   password: z.string().min(8),
@@ -248,6 +293,25 @@ export const insertAdvanceSchema = createInsertSchema(advances).omit({
   remainingBalance: true,
 });
 
+export const insertAttendanceRecordSchema = createInsertSchema(attendanceRecords).omit({
+  id: true,
+  createdAt: true,
+  approvedBy: true,
+  approvedAt: true,
+});
+
+export const insertOvertimeEntrySchema = createInsertSchema(overtimeEntries).omit({
+  id: true,
+  createdAt: true,
+  approvedBy: true,
+  approvedAt: true,
+});
+
+export const insertPayrollAdjustmentSchema = createInsertSchema(payrollAdjustments).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -280,6 +344,15 @@ export type LeaveRequest = typeof leaveRequests.$inferSelect;
 
 export type InsertAdvance = z.infer<typeof insertAdvanceSchema>;
 export type Advance = typeof advances.$inferSelect;
+
+export type InsertAttendanceRecord = z.infer<typeof insertAttendanceRecordSchema>;
+export type AttendanceRecord = typeof attendanceRecords.$inferSelect;
+
+export type InsertOvertimeEntry = z.infer<typeof insertOvertimeEntrySchema>;
+export type OvertimeEntry = typeof overtimeEntries.$inferSelect;
+
+export type InsertPayrollAdjustment = z.infer<typeof insertPayrollAdjustmentSchema>;
+export type PayrollAdjustment = typeof payrollAdjustments.$inferSelect;
 
 export type Report = typeof reports.$inferSelect;
 export type AuditLog = typeof auditLogs.$inferSelect;

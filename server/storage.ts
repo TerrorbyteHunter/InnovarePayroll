@@ -1,13 +1,17 @@
 import {
   users, employees, allowances, deductions, payrollRuns, payslips,
   statutoryConfig, leavePolicies, leaveBalances, leaveRequests, advances, reports, auditLogs,
+  attendanceRecords, overtimeEntries, payrollAdjustments,
   type User, type InsertUser, type Employee, type InsertEmployee,
   type Allowance, type InsertAllowance, type Deduction, type InsertDeduction,
   type PayrollRun, type InsertPayrollRun, type Payslip,
   type StatutoryConfig, type InsertStatutoryConfig,
   type LeavePolicy, type InsertLeavePolicy, type LeaveBalance,
   type LeaveRequest, type InsertLeaveRequest,
-  type Advance, type InsertAdvance, type Report, type AuditLog
+  type Advance, type InsertAdvance, type Report, type AuditLog,
+  type AttendanceRecord, type InsertAttendanceRecord,
+  type OvertimeEntry, type InsertOvertimeEntry,
+  type PayrollAdjustment, type InsertPayrollAdjustment
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc } from "drizzle-orm";
@@ -79,6 +83,24 @@ export interface IStorage {
   
   // Audit Logs
   createAuditLog(log: any): Promise<AuditLog>;
+  
+  // Attendance Records
+  getAttendanceRecords(): Promise<AttendanceRecord[]>;
+  getEmployeeAttendanceRecords(employeeId: string): Promise<AttendanceRecord[]>;
+  getAttendanceRecord(id: string): Promise<AttendanceRecord | undefined>;
+  createAttendanceRecord(record: InsertAttendanceRecord): Promise<AttendanceRecord>;
+  updateAttendanceRecord(id: string, data: Partial<AttendanceRecord>): Promise<AttendanceRecord>;
+  
+  // Overtime Entries
+  getOvertimeEntries(): Promise<OvertimeEntry[]>;
+  getEmployeeOvertimeEntries(employeeId: string): Promise<OvertimeEntry[]>;
+  getOvertimeEntry(id: string): Promise<OvertimeEntry | undefined>;
+  createOvertimeEntry(entry: InsertOvertimeEntry): Promise<OvertimeEntry>;
+  updateOvertimeEntry(id: string, data: Partial<OvertimeEntry>): Promise<OvertimeEntry>;
+  
+  // Payroll Adjustments
+  getPayrollAdjustments(payrollRunId: string): Promise<PayrollAdjustment[]>;
+  createPayrollAdjustment(adjustment: InsertPayrollAdjustment): Promise<PayrollAdjustment>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -286,6 +308,64 @@ export class DatabaseStorage implements IStorage {
   async createAuditLog(logData: any): Promise<AuditLog> {
     const [log] = await db.insert(auditLogs).values(logData).returning();
     return log;
+  }
+
+  // Attendance Records
+  async getAttendanceRecords(): Promise<AttendanceRecord[]> {
+    return await db.select().from(attendanceRecords).orderBy(desc(attendanceRecords.date));
+  }
+
+  async getEmployeeAttendanceRecords(employeeId: string): Promise<AttendanceRecord[]> {
+    return await db.select().from(attendanceRecords).where(eq(attendanceRecords.employeeId, employeeId)).orderBy(desc(attendanceRecords.date));
+  }
+
+  async getAttendanceRecord(id: string): Promise<AttendanceRecord | undefined> {
+    const [record] = await db.select().from(attendanceRecords).where(eq(attendanceRecords.id, id));
+    return record;
+  }
+
+  async createAttendanceRecord(insertRecord: InsertAttendanceRecord): Promise<AttendanceRecord> {
+    const [record] = await db.insert(attendanceRecords).values(insertRecord).returning();
+    return record;
+  }
+
+  async updateAttendanceRecord(id: string, data: Partial<AttendanceRecord>): Promise<AttendanceRecord> {
+    const [record] = await db.update(attendanceRecords).set(data).where(eq(attendanceRecords.id, id)).returning();
+    return record;
+  }
+
+  // Overtime Entries
+  async getOvertimeEntries(): Promise<OvertimeEntry[]> {
+    return await db.select().from(overtimeEntries).orderBy(desc(overtimeEntries.date));
+  }
+
+  async getEmployeeOvertimeEntries(employeeId: string): Promise<OvertimeEntry[]> {
+    return await db.select().from(overtimeEntries).where(eq(overtimeEntries.employeeId, employeeId)).orderBy(desc(overtimeEntries.date));
+  }
+
+  async getOvertimeEntry(id: string): Promise<OvertimeEntry | undefined> {
+    const [entry] = await db.select().from(overtimeEntries).where(eq(overtimeEntries.id, id));
+    return entry;
+  }
+
+  async createOvertimeEntry(insertEntry: InsertOvertimeEntry): Promise<OvertimeEntry> {
+    const [entry] = await db.insert(overtimeEntries).values(insertEntry).returning();
+    return entry;
+  }
+
+  async updateOvertimeEntry(id: string, data: Partial<OvertimeEntry>): Promise<OvertimeEntry> {
+    const [entry] = await db.update(overtimeEntries).set(data).where(eq(overtimeEntries.id, id)).returning();
+    return entry;
+  }
+
+  // Payroll Adjustments
+  async getPayrollAdjustments(payrollRunId: string): Promise<PayrollAdjustment[]> {
+    return await db.select().from(payrollAdjustments).where(eq(payrollAdjustments.payrollRunId, payrollRunId));
+  }
+
+  async createPayrollAdjustment(insertAdjustment: InsertPayrollAdjustment): Promise<PayrollAdjustment> {
+    const [adjustment] = await db.insert(payrollAdjustments).values(insertAdjustment).returning();
+    return adjustment;
   }
 }
 

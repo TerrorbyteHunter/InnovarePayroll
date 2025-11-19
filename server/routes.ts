@@ -432,7 +432,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const employees = await storage.getEmployees();
       const activeEmployees = employees.filter(e => e.isActive);
 
-      // Generate payslips
+      // Generate payslips and send emails
+      const emailResults = {
+        sent: 0,
+        failed: 0,
+        skipped: 0,
+      };
+
       for (const employee of activeEmployees) {
         const allowances = await storage.getEmployeeAllowances(employee.id);
         const deductions = await storage.getEmployeeDeductions(employee.id);
@@ -462,6 +468,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
           payrollRunId: payrollRun.id,
           ...payslipData,
         });
+
+        // Send payslip email if employee has email
+        if (employee.email) {
+          try {
+            const { sendPayslipEmail } = await import("./email-service");
+            const result = await sendPayslipEmail(
+              employee.email,
+              `${employee.firstName} ${employee.lastName}`,
+              payrollRun.period,
+              {
+                employeeNumber: employee.employeeNumber,
+                grossPay: payslipData.grossPay,
+                totalDeductions: payslipData.totalDeductions,
+                netPay: payslipData.netPay,
+              }
+            );
+            
+            if (result.success) {
+              emailResults.sent++;
+            } else {
+              emailResults.failed++;
+              console.error(`Failed to send email to ${employee.email}:`, result.error);
+            }
+          } catch (error) {
+            emailResults.failed++;
+            console.error(`Error sending email to ${employee.email}:`, error);
+          }
+        } else {
+          emailResults.skipped++;
+        }
       }
 
       const updated = await storage.updatePayrollRun(req.params.id, {

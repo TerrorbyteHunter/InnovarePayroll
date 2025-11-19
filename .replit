@@ -51,3 +51,4 @@ waitForPort = 5000
 
 [agent]
 expertMode = true
+integrations = ["resend:1.0.0"]

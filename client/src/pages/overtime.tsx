@@ -55,7 +55,7 @@ export default function Overtime() {
       date: new Date().toISOString().split("T")[0],
       hours: "1",
       rateMultiplier: "1.5",
-      status: "pending",
+      status: "Pending",
       reason: "",
     },
   });
@@ -94,9 +94,9 @@ export default function Overtime() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "approved":
+      case "Approved":
         return <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-200">Approved</Badge>;
-      case "rejected":
+      case "Rejected":
         return <Badge className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200">Rejected</Badge>;
       default:
         return <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">Pending</Badge>;
@@ -118,7 +118,7 @@ export default function Overtime() {
     : overtimeEntries.filter(e => e.status === filterStatus);
 
   const totalHours = overtimeEntries.reduce((sum, entry) => sum + parseFloat(entry.hours), 0);
-  const approvedHours = overtimeEntries.filter(e => e.status === "approved").reduce((sum, entry) => sum + parseFloat(entry.hours), 0);
+  const approvedHours = overtimeEntries.filter(e => e.status === "Approved").reduce((sum, entry) => sum + parseFloat(entry.hours), 0);
 
   return (
     <div className="p-6 space-y-6 bg-gradient-to-br from-slate-50 via-purple-50/30 to-pink-50/30 dark:from-gray-950 dark:via-purple-950/20 dark:to-pink-950/20 min-h-screen">
@@ -154,7 +154,7 @@ export default function Overtime() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-amber-600 dark:text-amber-400">
-              {overtimeEntries.filter(e => e.status === "pending").length}
+              {overtimeEntries.filter(e => e.status === "Pending").length}
             </div>
           </CardContent>
         </Card>
@@ -202,9 +202,9 @@ export default function Overtime() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Entries</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="approved">Approved</SelectItem>
-                    <SelectItem value="rejected">Rejected</SelectItem>
+                    <SelectItem value="Pending">Pending</SelectItem>
+                    <SelectItem value="Approved">Approved</SelectItem>
+                    <SelectItem value="Rejected">Rejected</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -362,12 +362,12 @@ export default function Overtime() {
                         {entry.reason || "-"}
                       </TableCell>
                       <TableCell className="text-right">
-                        {entry.status === "pending" && (
+                        {entry.status === "Pending" && (
                           <div className="flex justify-end gap-2">
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => updateStatusMutation.mutate({ id: entry.id, status: "approved" })}
+                              onClick={() => updateStatusMutation.mutate({ id: entry.id, status: "Approved" })}
                               data-testid={`button-approve-${entry.id}`}
                               className="hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
                             >
@@ -376,7 +376,7 @@ export default function Overtime() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => updateStatusMutation.mutate({ id: entry.id, status: "rejected" })}
+                              onClick={() => updateStatusMutation.mutate({ id: entry.id, status: "Rejected" })}
                               data-testid={`button-reject-${entry.id}`}
                               className="hover:bg-red-50 dark:hover:bg-red-950/30"
                             >

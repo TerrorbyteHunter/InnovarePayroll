@@ -254,7 +254,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const employee of activeEmployees) {
         const allowances = await storage.getEmployeeAllowances(employee.id);
         const deductions = await storage.getEmployeeDeductions(employee.id);
-        const payslipCalc = calculator.calculatePayslip(employee, allowances, deductions, payrollRun.period);
+        
+        // Fetch attendance and overtime for this employee and period
+        // Period format is YYYY-MM, dates are YYYY-MM-DD
+        const allAttendance = await storage.getAttendanceRecords();
+        const employeeAttendance = allAttendance.filter(r => 
+          r.employeeId === employee.id && r.date.startsWith(payrollRun.period)
+        );
+        
+        const allOvertime = await storage.getOvertimeEntries();
+        const employeeOvertime = allOvertime.filter(e => 
+          e.employeeId === employee.id && e.date.startsWith(payrollRun.period)
+        );
+        
+        const payslipCalc = calculator.calculatePayslip(
+          employee, 
+          allowances, 
+          deductions, 
+          payrollRun.period,
+          employeeAttendance,
+          employeeOvertime
+        );
 
         totalGross += parseFloat(payslipCalc.grossPay);
         totalPaye += parseFloat(payslipCalc.paye);
@@ -329,7 +349,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const employee of activeEmployees) {
         const allowances = await storage.getEmployeeAllowances(employee.id);
         const deductions = await storage.getEmployeeDeductions(employee.id);
-        const payslipData = calculator.calculatePayslip(employee, allowances, deductions, payrollRun.period);
+        
+        // Fetch attendance and overtime for this employee and period
+        // Period format is YYYY-MM, dates are YYYY-MM-DD
+        const allAttendance = await storage.getAttendanceRecords();
+        const employeeAttendance = allAttendance.filter(r => 
+          r.employeeId === employee.id && r.date.startsWith(payrollRun.period)
+        );
+        
+        const allOvertime = await storage.getOvertimeEntries();
+        const employeeOvertime = allOvertime.filter(e => 
+          e.employeeId === employee.id && e.date.startsWith(payrollRun.period)
+        );
+        
+        const payslipData = calculator.calculatePayslip(
+          employee, 
+          allowances, 
+          deductions, 
+          payrollRun.period,
+          employeeAttendance,
+          employeeOvertime
+        );
 
         await storage.createPayslip({
           payrollRunId: payrollRun.id,
@@ -724,7 +764,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // If status is being updated, validate it
       if (status !== undefined) {
-        const validStatuses = ['pending', 'approved', 'rejected'];
+        const validStatuses = ['Pending', 'Approved', 'Rejected'];
         if (!validStatuses.includes(status)) {
           return res.status(400).json({ message: "Invalid status value" });
         }
@@ -814,7 +854,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // If status is being updated, validate it
       if (status !== undefined) {
-        const validStatuses = ['pending', 'approved', 'rejected'];
+        const validStatuses = ['Pending', 'Approved', 'Rejected'];
         if (!validStatuses.includes(status)) {
           return res.status(400).json({ message: "Invalid status value" });
         }

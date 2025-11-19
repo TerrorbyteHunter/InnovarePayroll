@@ -1,4 +1,4 @@
-import type { StatutoryConfig, Employee, Allowance, Deduction } from "@shared/schema";
+import type { StatutoryConfig, Employee, Allowance, Deduction, AttendanceRecord, OvertimeEntry } from "@shared/schema";
 
 interface PayeCalculation {
   taxableIncome: number;
@@ -114,7 +114,9 @@ export class PayrollCalculator {
     employee: Employee,
     allowances: Allowance[],
     deductions: Deduction[],
-    period: string
+    period: string,
+    attendanceRecords: AttendanceRecord[] = [],
+    overtimeEntries: OvertimeEntry[] = []
   ) {
     const baseSalary = parseFloat(employee.baseSalary);
     
@@ -122,14 +124,52 @@ export class PayrollCalculator {
       .filter(a => a.isRecurring)
       .reduce((sum, a) => sum + parseFloat(a.amount), 0);
     
-    const grossPay = baseSalary + totalAllowances;
+    // Calculate attendance deduction based on approved absences only
+    // Standard 8 hours per day
+    const standardDailyHours = 8;
+    const hourlyRate = baseSalary / (standardDailyHours * 22); // ~22 working days per month
+    
+    // Deduct only for approved absences
+    const approvedAbsences = attendanceRecords.filter(r => 
+      r.status === 'Approved' && r.type === 'absence'
+    );
+    const totalAbsenceHours = approvedAbsences.reduce((sum, r) => {
+      // If hoursWorked is specified, use the shortfall from standard day
+      // Otherwise, assume full day absence
+      if (r.hoursWorked) {
+        const workedHours = parseFloat(r.hoursWorked);
+        return sum + Math.max(0, standardDailyHours - workedHours);
+      }
+      return sum + standardDailyHours;
+    }, 0);
+    
+    const attendanceDeduction = totalAbsenceHours * hourlyRate;
+    
+    // Calculate total hours worked from all approved attendance records
+    const totalHoursWorked = attendanceRecords
+      .filter(r => r.status === 'Approved' && r.hoursWorked)
+      .reduce((sum, r) => sum + parseFloat(r.hoursWorked!), 0);
+
+    // Calculate overtime addition
+    const approvedOvertime = overtimeEntries.filter(e => e.status === 'Approved');
+    const overtimeAddition = approvedOvertime.reduce((sum, e) => {
+      const hours = parseFloat(e.hours);
+      const multiplier = parseFloat(e.rateMultiplier);
+      return sum + (hours * hourlyRate * multiplier);
+    }, 0);
+    
+    // Apply attendance deduction BEFORE calculating statutory deductions
+    // Gross pay is reduced by absences and increased by overtime
+    const grossPay = baseSalary + totalAllowances - attendanceDeduction + overtimeAddition;
     
     const taxableAllowances = allowances
       .filter(a => a.isRecurring && a.isTaxable)
       .reduce((sum, a) => sum + parseFloat(a.amount), 0);
     
-    const taxableIncome = baseSalary + taxableAllowances;
+    // Taxable income includes overtime but accounts for attendance deductions
+    const taxableIncome = baseSalary + taxableAllowances - attendanceDeduction + overtimeAddition;
     
+    // Calculate statutory deductions based on adjusted gross pay
     const payeCalc = this.calculatePAYE(taxableIncome);
     const napsa = this.calculateNAPSA(grossPay, employee.isNapsaExempt);
     const nhima = this.calculateNHIMA(grossPay, employee.isNhimaExempt);
@@ -138,6 +178,7 @@ export class PayrollCalculator {
       .filter(d => d.isRecurring)
       .reduce((sum, d) => sum + parseFloat(d.amount), 0);
     
+    // Total deductions do NOT include attendance deduction (already applied to gross pay)
     const totalStatutory = payeCalc.paye + napsa.employee + nhima;
     const totalDeductions = totalStatutory + otherDeductions;
     const netPay = grossPay - totalDeductions;
@@ -155,6 +196,10 @@ export class PayrollCalculator {
         name: d.name,
         amount: d.amount,
       })),
+      attendanceDeduction: attendanceDeduction.toFixed(2),
+      overtimeAddition: overtimeAddition.toFixed(2),
+      totalHoursWorked: totalHoursWorked.toFixed(2),
+      approvedOvertimeHours: approvedOvertime.reduce((sum, e) => sum + parseFloat(e.hours), 0).toFixed(2),
       grossPay: grossPay.toFixed(2),
       taxableIncome: taxableIncome.toFixed(2),
       paye: payeCalc.paye.toFixed(2),

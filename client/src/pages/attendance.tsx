@@ -54,7 +54,7 @@ export default function Attendance() {
       employeeId: "",
       date: new Date().toISOString().split("T")[0],
       type: "absence",
-      status: "pending",
+      status: "Pending",
       reason: "",
       hoursWorked: "8",
     },
@@ -94,9 +94,9 @@ export default function Attendance() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "approved":
+      case "Approved":
         return <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-200">Approved</Badge>;
-      case "rejected":
+      case "Rejected":
         return <Badge className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200">Rejected</Badge>;
       default:
         return <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">Pending</Badge>;
@@ -156,7 +156,7 @@ export default function Attendance() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-amber-600 dark:text-amber-400">
-              {attendanceRecords.filter(r => r.status === "pending").length}
+              {attendanceRecords.filter(r => r.status === "Pending").length}
             </div>
           </CardContent>
         </Card>
@@ -169,7 +169,7 @@ export default function Attendance() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
-              {attendanceRecords.filter(r => r.status === "approved").length}
+              {attendanceRecords.filter(r => r.status === "Approved").length}
             </div>
           </CardContent>
         </Card>
@@ -182,7 +182,7 @@ export default function Attendance() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-red-600 dark:text-red-400">
-              {attendanceRecords.filter(r => r.status === "rejected").length}
+              {attendanceRecords.filter(r => r.status === "Rejected").length}
             </div>
           </CardContent>
         </Card>
@@ -204,9 +204,9 @@ export default function Attendance() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Records</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="approved">Approved</SelectItem>
-                    <SelectItem value="rejected">Rejected</SelectItem>
+                    <SelectItem value="Pending">Pending</SelectItem>
+                    <SelectItem value="Approved">Approved</SelectItem>
+                    <SelectItem value="Rejected">Rejected</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -365,12 +365,12 @@ export default function Attendance() {
                         {record.reason || "-"}
                       </TableCell>
                       <TableCell className="text-right">
-                        {record.status === "pending" && (
+                        {record.status === "Pending" && (
                           <div className="flex justify-end gap-2">
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => updateStatusMutation.mutate({ id: record.id, status: "approved" })}
+                              onClick={() => updateStatusMutation.mutate({ id: record.id, status: "Approved" })}
                               data-testid={`button-approve-${record.id}`}
                               className="hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
                             >
@@ -379,9 +379,9 @@ export default function Attendance() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => updateStatusMutation.mutate({ id: record.id, status: "rejected" })}
+                              onClick={() => updateStatusMutation.mutate({ id: record.id, status: "Rejected" })}
                               data-testid={`button-reject-${record.id}`}
-                              className="hover:bg-red-50 dark:hover:bg-red-950/30"
+                              className="hover:bg-red-950/30"
                             >
                               <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
                             </Button>

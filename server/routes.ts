@@ -513,10 +513,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         entityId: updated.id,
         beforeSnapshot: payrollRun,
         afterSnapshot: updated,
-        metadata: null,
+        metadata: { emailResults },
       });
 
-      res.json(updated);
+      res.json({ 
+        payrollRun: updated,
+        emailResults 
+      });
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: "Server error" });

@@ -27,6 +27,7 @@ export const employees = pgTable("employees", {
   dateOfBirth: text("date_of_birth"),
   gender: text("gender"),
   address: text("address"),
+  residentialAddress: text("residential_address"),
   department: text("department"),
   position: text("position"),
   hireDate: text("hire_date").notNull(),

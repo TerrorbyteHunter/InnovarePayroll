@@ -31,9 +31,12 @@ export const employees = pgTable("employees", {
   department: text("department"),
   position: text("position"),
   hireDate: text("hire_date").notNull(),
+  paymentMethod: text("payment_method").notNull().default('bank'), // bank, cash, mobile_money
   bankName: text("bank_name"),
   bankAccount: text("bank_account"),
   bankBranch: text("bank_branch"),
+  mobileMoneyProvider: text("mobile_money_provider"),
+  mobileMoneyNumber: text("mobile_money_number"),
   baseSalary: decimal("base_salary", { precision: 12, scale: 2 }).notNull(),
   payeNumber: text("paye_number"),
   napsaNumber: text("napsa_number"),

@@ -3,8 +3,10 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { PayrollCalculator } from "./calculations";
 import { PDFGenerator } from "./pdf-generator";
+import { ExcelGenerator } from "./excel-generator";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import multer from "multer";
 import { 
   insertUserSchema, loginSchema, insertEmployeeSchema,
   insertPayrollRunSchema, insertLeaveRequestSchema, insertAdvanceSchema,
@@ -12,6 +14,9 @@ import {
 } from "@shared/schema";
 
 const JWT_SECRET = process.env.SESSION_SECRET || "innovare-payroll-secret-key";
+
+// Configure multer for file uploads
+const upload = multer({ storage: multer.memoryStorage() });
 
 // Middleware for authentication
 function authenticateToken(req: any, res: any, next: any) {
@@ -481,6 +486,147 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error generating PDF:", error);
       res.status(500).json({ message: "Failed to generate PDF" });
+    }
+  });
+
+  // Excel Export Routes
+
+  // Download attendance register template
+  app.get("/api/attendance/template/:period", authenticateToken, async (req, res) => {
+    try {
+      const employees = await storage.getEmployees();
+      const activeEmployees = employees.filter(e => e.isActive);
+      
+      const excelGenerator = new ExcelGenerator();
+      const excelBuffer = excelGenerator.generateAttendanceTemplate(activeEmployees, req.params.period);
+
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename=attendance-register-${req.params.period}.xlsx`);
+      res.send(excelBuffer);
+    } catch (error) {
+      console.error("Error generating attendance template:", error);
+      res.status(500).json({ message: "Failed to generate attendance template" });
+    }
+  });
+
+  // Import attendance from Excel
+  app.post("/api/attendance/import", authenticateToken, upload.single('file'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      const excelGenerator = new ExcelGenerator();
+      const records = excelGenerator.parseAttendanceFile(req.file.buffer);
+
+      const created: any[] = [];
+      const errors: any[] = [];
+
+      for (const record of records) {
+        try {
+          // Find employee by employee number
+          const employee = await storage.getEmployeeByNumber(record.employeeNumber);
+          if (!employee) {
+            errors.push({ record, error: "Employee not found" });
+            continue;
+          }
+
+          // Determine attendance type
+          let type = 'present';
+          if (record.status.toLowerCase() === 'absent') type = 'absent';
+          else if (record.status.toLowerCase() === 'sick') type = 'sick';
+          else if (record.status.toLowerCase() === 'leave') type = 'leave';
+
+          // Create attendance record
+          const attendance = await storage.createAttendanceRecord({
+            employeeId: employee.id,
+            date: record.date,
+            type,
+            hoursWorked: record.hoursWorked,
+            overtimeHours: record.overtimeHours,
+            lateMinutes: record.lateMinutes,
+            notes: record.notes,
+            status: 'Approved', // Auto-approve imports
+            approvedBy: (req as any).user.id,
+            approvedAt: new Date(),
+          });
+
+          created.push(attendance);
+
+          // If overtime exists, create overtime entry
+          if (record.overtimeHours > 0) {
+            await storage.createOvertimeEntry({
+              employeeId: employee.id,
+              date: record.date,
+              hours: record.overtimeHours,
+              rateMultiplier: '1.5',
+              reason: record.notes || 'Imported from attendance register',
+              status: 'Approved',
+              approvedBy: (req as any).user.id,
+              approvedAt: new Date(),
+            });
+          }
+        } catch (err) {
+          errors.push({ record, error: String(err) });
+        }
+      }
+
+      res.json({
+        message: `Imported ${created.length} attendance records`,
+        created: created.length,
+        errors: errors.length,
+        errorDetails: errors
+      });
+    } catch (error) {
+      console.error("Error importing attendance:", error);
+      res.status(500).json({ message: "Failed to import attendance data" });
+    }
+  });
+
+  // Export payroll to Excel
+  app.get("/api/payroll/:id/export", authenticateToken, async (req, res) => {
+    try {
+      const payrollRun = await storage.getPayrollRun(req.params.id);
+      if (!payrollRun) {
+        return res.status(404).json({ message: "Payroll run not found" });
+      }
+
+      const payslips = await storage.getPayslipsByPayrollRun(req.params.id);
+      
+      // Fetch employee data for each payslip
+      const payslipsWithEmployees = await Promise.all(
+        payslips.map(async (ps) => {
+          const employee = await storage.getEmployee(ps.employeeId);
+          return { ...ps, employee: employee! };
+        })
+      );
+
+      const excelGenerator = new ExcelGenerator();
+      const excelBuffer = excelGenerator.generatePayrollExport(payrollRun, payslipsWithEmployees);
+
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename=payroll-${payrollRun.period}.xlsx`);
+      res.send(excelBuffer);
+    } catch (error) {
+      console.error("Error exporting payroll:", error);
+      res.status(500).json({ message: "Failed to export payroll" });
+    }
+  });
+
+  // Export employee list to Excel
+  app.get("/api/employees/export", authenticateToken, async (req, res) => {
+    try {
+      const employees = await storage.getEmployees();
+      
+      const excelGenerator = new ExcelGenerator();
+      const excelBuffer = excelGenerator.generateEmployeeListExport(employees);
+
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename=employees-${new Date().toISOString().split('T')[0]}.xlsx`);
+      res.send(excelBuffer);
+    } catch (error) {
+      console.error("Error exporting employees:", error);
+      res.status(500).json({ message: "Failed to export employee list" });
     }
   });
 

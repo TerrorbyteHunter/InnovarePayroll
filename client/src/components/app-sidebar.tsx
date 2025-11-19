@@ -71,22 +71,22 @@ const menuGroups = [
       {
         title: "Payroll",
         url: "/payroll",
-        icon: Calculator,
+        icon: DollarSign,
       },
       {
         title: "Payslips",
         url: "/payslips",
-        icon: Receipt,
+        icon: FileText,
       },
       {
         title: "Advances",
         url: "/advances",
-        icon: DollarSign,
+        icon: Receipt,
       },
       {
         title: "Reports",
         url: "/reports",
-        icon: FileText,
+        icon: UserCog,
       },
     ],
   },

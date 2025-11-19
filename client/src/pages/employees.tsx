@@ -58,9 +58,12 @@ export default function Employees() {
       department: "",
       position: "",
       hireDate: new Date().toISOString().split('T')[0],
+      paymentMethod: "bank",
       bankName: "",
       bankAccount: "",
       bankBranch: "",
+      mobileMoneyProvider: "",
+      mobileMoneyNumber: "",
       baseSalary: "0",
       payeNumber: "",
       napsaNumber: "",
@@ -371,48 +374,113 @@ export default function Employees() {
                 </div>
 
                 <div className="space-y-3">
-                  <h3 className="text-lg font-semibold">Bank Details</h3>
-                  <div className="grid grid-cols-3 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="bankName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Bank Name</FormLabel>
+                  <h3 className="text-lg font-semibold">Payment Details</h3>
+                  <FormField
+                    control={form.control}
+                    name="paymentMethod"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Payment Method *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || "bank"}>
                           <FormControl>
-                            <Input {...field} placeholder="Zanaco" data-testid="input-bank-name" />
+                            <SelectTrigger data-testid="select-payment-method">
+                              <SelectValue placeholder="Select payment method" />
+                            </SelectTrigger>
                           </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="bankAccount"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Account Number</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="1234567890" data-testid="input-bank-account" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="bankBranch"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Branch</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="Lusaka Main" data-testid="input-bank-branch" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                          <SelectContent>
+                            <SelectItem value="bank">Bank Transfer</SelectItem>
+                            <SelectItem value="cash">Cash</SelectItem>
+                            <SelectItem value="mobile_money">Mobile Money</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  {form.watch("paymentMethod") === "bank" && (
+                    <div className="grid grid-cols-3 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="bankName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Bank Name</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="Zanaco" data-testid="input-bank-name" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="bankAccount"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Account Number</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="1234567890" data-testid="input-bank-account" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="bankBranch"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Branch</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="Lusaka Main" data-testid="input-bank-branch" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  )}
+                  
+                  {form.watch("paymentMethod") === "mobile_money" && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="mobileMoneyProvider"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Mobile Money Provider</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value || undefined}>
+                              <FormControl>
+                                <SelectTrigger data-testid="select-mobile-money-provider">
+                                  <SelectValue placeholder="Select provider" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="MTN">MTN Mobile Money</SelectItem>
+                                <SelectItem value="Airtel">Airtel Money</SelectItem>
+                                <SelectItem value="Zamtel">Zamtel Kwacha</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="mobileMoneyNumber"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Mobile Money Number</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="+260 XXX XXX XXX" data-testid="input-mobile-money-number" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-3">

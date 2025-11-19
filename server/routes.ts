@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { PayrollCalculator } from "./calculations";
+import { PDFGenerator } from "./pdf-generator";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { 
@@ -453,6 +454,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Download Payslip as PDF
+  app.get("/api/payslips/:id/download", authenticateToken, async (req, res) => {
+    try {
+      const payslip = await storage.getPayslip(req.params.id);
+      if (!payslip) {
+        return res.status(404).json({ message: "Payslip not found" });
+      }
+
+      const employee = await storage.getEmployee(payslip.employeeId);
+      if (!employee) {
+        return res.status(404).json({ message: "Employee not found" });
+      }
+
+      const payrollRun = await storage.getPayrollRun(payslip.payrollRunId);
+      if (!payrollRun) {
+        return res.status(404).json({ message: "Payroll run not found" });
+      }
+
+      const pdfGenerator = new PDFGenerator();
+      const pdfBuffer = await pdfGenerator.generatePayslipPDF(payslip, employee, payrollRun);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename=payslip-${employee.employeeNumber}-${payslip.period}.pdf`);
+      res.send(pdfBuffer);
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      res.status(500).json({ message: "Failed to generate PDF" });
+    }
+  });
+
   // Reports Routes
   app.get("/api/reports", authenticateToken, async (req, res) => {
     try {
@@ -532,6 +563,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(report);
     } catch (error) {
       res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  // Download Report as PDF
+  app.get("/api/reports/:id/download", authenticateToken, async (req, res) => {
+    try {
+      const report = await storage.getReport(req.params.id);
+      if (!report) {
+        return res.status(404).json({ message: "Report not found" });
+      }
+
+      const pdfGenerator = new PDFGenerator();
+      const pdfBuffer = await pdfGenerator.generateReportPDF(report);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename=${report.type}-${report.period}.pdf`);
+      res.send(pdfBuffer);
+    } catch (error) {
+      console.error("Error generating report PDF:", error);
+      res.status(500).json({ message: "Failed to generate PDF" });
     }
   });
 

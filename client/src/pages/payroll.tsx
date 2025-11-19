@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +33,7 @@ import { Progress } from "@/components/ui/progress";
 type WizardStep = "create" | "preview" | "approve";
 
 export default function Payroll() {
+  const [, setLocation] = useLocation();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState<WizardStep>("create");
   const [selectedPayroll, setSelectedPayroll] = useState<PayrollRun | null>(null);
@@ -134,7 +136,7 @@ export default function Payroll() {
 
   const handleViewPayslips = (payrollId: string) => {
     // Navigate to payslips page with filter for this payroll
-    window.location.href = `/payslips?payrollId=${payrollId}`;
+    setLocation(`/payslips?payrollId=${payrollId}`);
   };
 
   const handleExportPayroll = async (payrollId: string) => {

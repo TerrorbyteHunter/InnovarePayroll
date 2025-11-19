@@ -141,13 +141,7 @@ export function AppSidebar() {
                         <SidebarMenuButton 
                           asChild 
                           data-active={isActive}
-                          className={`
-                            transition-all duration-200 
-                            ${isActive 
-                              ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium shadow-md hover:from-blue-700 hover:to-purple-700' 
-                              : 'hover:bg-accent'
-                            }
-                          `}
+                          className={isActive ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium' : ''}
                         >
                           <Link href={item.url} data-testid={`nav-${item.title.toLowerCase()}`}>
                             <item.icon className={`h-4 w-4 ${isActive ? 'text-white' : ''}`} />
@@ -180,7 +174,7 @@ export function AppSidebar() {
             size="icon"
             onClick={handleLogout}
             data-testid="button-logout"
-            className="h-9 w-9 hover:bg-red-100 dark:hover:bg-red-900/30"
+            className="h-9 w-9"
             title="Logout"
           >
             <LogOut className="h-4 w-4 text-red-600 dark:text-red-400" />

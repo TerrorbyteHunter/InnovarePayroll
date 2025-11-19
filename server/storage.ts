@@ -79,6 +79,7 @@ export interface IStorage {
   
   // Reports
   getReports(): Promise<Report[]>;
+  getReport(id: string): Promise<Report | undefined>;
   createReport(report: any): Promise<Report>;
   
   // Audit Logs
@@ -300,6 +301,11 @@ export class DatabaseStorage implements IStorage {
   // Reports
   async getReports(): Promise<Report[]> {
     return await db.select().from(reports).orderBy(desc(reports.createdAt));
+  }
+
+  async getReport(id: string): Promise<Report | undefined> {
+    const [report] = await db.select().from(reports).where(eq(reports.id, id));
+    return report;
   }
 
   async createReport(reportData: any): Promise<Report> {

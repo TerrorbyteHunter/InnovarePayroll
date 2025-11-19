@@ -119,7 +119,7 @@ export class PDFGenerator {
             doc.fillColor('#059669')
               .fontSize(10)
               .font('Helvetica')
-              .text(`ZMW ${parseFloat(allowance.amount).toLocaleString('en-ZM', { minimumFractionDigits: 2 })}`, 400, yPos, { align: 'right' });
+              .text(`ZMW ${parseFloat(String(allowance.amount)).toLocaleString('en-ZM', { minimumFractionDigits: 2 })}`, 400, yPos, { align: 'right' });
             
             yPos += 18;
           });

@@ -21,7 +21,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Edit, Trash2, Eye } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Eye, Download, Upload } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -36,6 +36,7 @@ export default function Employees() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+  const [uploadingFile, setUploadingFile] = useState(false);
   const { toast } = useToast();
 
   const { data: employees = [], isLoading } = useQuery<Employee[]>({
@@ -138,6 +139,76 @@ export default function Employees() {
     setIsDialogOpen(true);
   };
 
+  const handleDownloadTemplate = async () => {
+    try {
+      const response = await fetch("/api/employees/template/download", {
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      
+      if (!response.ok) throw new Error("Failed to download template");
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "employee_import_template.xlsx";
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({ title: "Template downloaded successfully" });
+    } catch (error) {
+      toast({ title: "Failed to download template", variant: "destructive" });
+    }
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploadingFile(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await fetch("/api/employees/bulk-import", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: formData,
+      });
+
+      const result = await response.json();
+      
+      if (response.ok) {
+        queryClient.invalidateQueries({ queryKey: ["/api/employees"] });
+        toast({
+          title: "Import completed",
+          description: `${result.successful} employees imported successfully. ${result.failed} failed.`,
+        });
+        
+        if (result.errors && result.errors.length > 0) {
+          console.log("Import errors:", result.errors);
+        }
+      } else {
+        toast({
+          title: "Import failed",
+          description: result.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({ title: "Failed to upload file", variant: "destructive" });
+    } finally {
+      setUploadingFile(false);
+      event.target.value = "";
+    }
+  };
+
   const filteredEmployees = employees.filter((emp) => {
     const searchLower = searchQuery.toLowerCase();
     return (
@@ -157,13 +228,40 @@ export default function Employees() {
             Manage employee information and payroll details
           </p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={handleAdd} data-testid="button-add-employee">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Employee
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={handleDownloadTemplate}
+            data-testid="button-download-template"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Download Template
+          </Button>
+          <div className="relative">
+            <input
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleFileUpload}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              disabled={uploadingFile}
+              data-testid="input-bulk-upload"
+            />
+            <Button
+              variant="outline"
+              disabled={uploadingFile}
+              data-testid="button-bulk-upload"
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              {uploadingFile ? "Uploading..." : "Bulk Import"}
             </Button>
-          </DialogTrigger>
+          </div>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={handleAdd} data-testid="button-add-employee">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Employee
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingEmployee ? "Edit Employee" : "Add New Employee"}</DialogTitle>

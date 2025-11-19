@@ -193,6 +193,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/employees/template/download", authenticateToken, async (req, res) => {
+    try {
+      const { generateEmployeeTemplate } = await import("./employee-import");
+      const XLSX = await import("xlsx");
+      
+      const workbook = generateEmployeeTemplate();
+      const buffer = XLSX.write(workbook, { bookType: "xlsx", type: "buffer" });
+      
+      res.setHeader("Content-Disposition", "attachment; filename=employee_import_template.xlsx");
+      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+      res.send(buffer);
+    } catch (error) {
+      console.error("Template download error:", error);
+      res.status(500).json({ message: "Failed to generate template" });
+    }
+  });
+
+  app.post("/api/employees/bulk-import", authenticateToken, upload.single("file"), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      const { parseEmployeeExcel } = await import("./employee-import");
+      const { employees, errors } = parseEmployeeExcel(req.file.buffer);
+
+      if (errors.length > 0 && employees.length === 0) {
+        return res.status(400).json({ message: "No valid employees found", errors });
+      }
+
+      const results = {
+        successful: [] as any[],
+        failed: [] as { row: string; error: string }[],
+      };
+
+      for (let i = 0; i < employees.length; i++) {
+        const employeeData = employees[i];
+        try {
+          const existing = await storage.getEmployeeByNumber(employeeData.employeeNumber);
+          if (existing) {
+            results.failed.push({
+              row: `Employee ${employeeData.employeeNumber}`,
+              error: "Employee number already exists",
+            });
+            continue;
+          }
+
+          const employee = await storage.createEmployee(employeeData);
+          
+          await storage.createAuditLog({
+            userId: (req as any).user.id,
+            action: "BULK_IMPORT_EMPLOYEE",
+            entity: "Employee",
+            entityId: employee.id,
+            beforeSnapshot: null,
+            afterSnapshot: employee,
+            metadata: { importBatch: new Date().toISOString() },
+          });
+
+          results.successful.push(employee);
+        } catch (error) {
+          results.failed.push({
+            row: `Employee ${employeeData.employeeNumber}`,
+            error: error instanceof Error ? error.message : "Unknown error",
+          });
+        }
+      }
+
+      res.json({
+        message: `Imported ${results.successful.length} employees. ${results.failed.length} failed.`,
+        successful: results.successful.length,
+        failed: results.failed.length,
+        errors: results.failed,
+        parseErrors: errors,
+      });
+    } catch (error) {
+      console.error("Bulk import error:", error);
+      res.status(500).json({ message: "Failed to import employees" });
+    }
+  });
+
   app.delete("/api/employees/:id", authenticateToken, async (req, res) => {
     try {
       const employee = await storage.getEmployee(req.params.id);

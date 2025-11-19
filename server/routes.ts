@@ -542,28 +542,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
             employeeId: employee.id,
             date: record.date,
             type,
-            hoursWorked: record.hoursWorked,
-            overtimeHours: record.overtimeHours,
-            lateMinutes: record.lateMinutes,
-            notes: record.notes,
+            hoursWorked: String(record.hoursWorked),
+            reason: record.notes,
+            notes: record.lateMinutes > 0 ? `Late by ${record.lateMinutes} minutes` : undefined,
             status: 'Approved', // Auto-approve imports
-            approvedBy: (req as any).user.id,
-            approvedAt: new Date(),
           });
 
           created.push(attendance);
 
           // If overtime exists, create overtime entry
           if (record.overtimeHours > 0) {
+            // Calculate overtime amount (assuming hourly rate from base salary / 160 hours per month)
+            const hourlyRate = parseFloat(employee.baseSalary) / 160;
+            const overtimeAmount = hourlyRate * 1.5 * record.overtimeHours;
+            
             await storage.createOvertimeEntry({
               employeeId: employee.id,
               date: record.date,
-              hours: record.overtimeHours,
+              hours: String(record.overtimeHours),
               rateMultiplier: '1.5',
+              amount: String(overtimeAmount.toFixed(2)),
               reason: record.notes || 'Imported from attendance register',
               status: 'Approved',
-              approvedBy: (req as any).user.id,
-              approvedAt: new Date(),
             });
           }
         } catch (err) {

@@ -93,9 +93,9 @@ export class ExcelGenerator {
     lateMinutes: number;
     notes: string;
   }> {
-    const workbook = XLSX.read(buffer, { type: 'buffer' });
+    const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true });
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-    const data: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+    const data: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: false });
 
     const records: Array<{
       employeeNumber: string;
@@ -112,9 +112,31 @@ export class ExcelGenerator {
       const row = data[i];
       if (!row || !row[0] || !row[3]) continue; // Skip empty rows or rows without employee number and date
 
+      // Parse date - handle both Date objects and string formats
+      let dateStr = '';
+      const dateValue = row[3];
+      if (dateValue instanceof Date) {
+        // Convert Date object to YYYY-MM-DD format
+        dateStr = dateValue.toISOString().split('T')[0];
+      } else if (typeof dateValue === 'number') {
+        // Excel serial date number - convert to YYYY-MM-DD
+        const excelEpoch = new Date(1900, 0, 1);
+        const daysOffset = dateValue - 2; // Excel has a 1900 leap year bug
+        const date = new Date(excelEpoch.getTime() + daysOffset * 24 * 60 * 60 * 1000);
+        dateStr = date.toISOString().split('T')[0];
+      } else {
+        // String format - validate it's YYYY-MM-DD
+        dateStr = String(dateValue).trim();
+        // Basic validation for YYYY-MM-DD format
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+          console.warn(`Invalid date format: ${dateStr}, skipping row`);
+          continue;
+        }
+      }
+
       records.push({
         employeeNumber: String(row[0]).trim(),
-        date: String(row[3]).trim(),
+        date: dateStr,
         status: String(row[4] || 'Present').trim(),
         hoursWorked: parseFloat(String(row[5] || '0')),
         overtimeHours: parseFloat(String(row[6] || '0')),
@@ -133,7 +155,7 @@ export class ExcelGenerator {
     payrollRun: PayrollRun,
     payslips: Array<Payslip & { employee: Employee }>
   ): Buffer {
-    const worksheetData = [
+    const worksheetData: (string | number)[][] = [
       // Header row
       [
         'Payroll Period',
@@ -190,16 +212,16 @@ export class ExcelGenerator {
         ps.employee.nrcNumber,
         ps.employee.bankName || '',
         ps.employee.bankAccount || '',
-        parseFloat(ps.baseSalary),
+        parseFloat(String(ps.baseSalary)),
         allowancesTotal,
-        parseFloat(ps.grossPay),
-        parseFloat(ps.paye),
-        parseFloat(ps.napsaEmployee),
-        parseFloat(ps.napsaEmployer),
-        parseFloat(ps.nhima),
+        parseFloat(String(ps.grossPay)),
+        parseFloat(String(ps.paye)),
+        parseFloat(String(ps.napsaEmployee)),
+        parseFloat(String(ps.napsaEmployer)),
+        parseFloat(String(ps.nhima)),
         otherDeductionsTotal,
-        parseFloat(ps.totalDeductions),
-        parseFloat(ps.netPay),
+        parseFloat(String(ps.totalDeductions)),
+        parseFloat(String(ps.netPay)),
         ps.employee.residentialAddress || ps.employee.address || ''
       ]);
     });
@@ -316,7 +338,7 @@ export class ExcelGenerator {
    * Generate employee list export
    */
   generateEmployeeListExport(employees: Employee[]): Buffer {
-    const worksheetData = [
+    const worksheetData: (string | number)[][] = [
       // Header row
       [
         'Employee Number',
@@ -359,7 +381,7 @@ export class ExcelGenerator {
         emp.bankName || '',
         emp.bankAccount || '',
         emp.bankBranch || '',
-        parseFloat(emp.baseSalary),
+        parseFloat(String(emp.baseSalary)),
         emp.payeNumber || '',
         emp.napsaNumber || '',
         emp.nhimaNumber || '',

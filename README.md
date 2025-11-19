@@ -38,6 +38,7 @@ Innovare Payroll is a comprehensive, modern HR and payroll management system spe
 
 ✅ **Attendance & Overtime**
 - Record absences, lateness, and sick days
+- **Excel-based attendance register**: Download template, fill offline, and import
 - Overtime entry with customizable rate multipliers
 - Approval workflows for both attendance and overtime
 - Automatic payroll integration
@@ -54,6 +55,7 @@ Innovare Payroll is a comprehensive, modern HR and payroll management system spe
 - NAPSA reports (Employee & Employer)
 - NHIMA compliance reports
 - Payroll journal summaries
+- **Excel export**: Export payroll, employees, and reports to Excel
 - Audit trail for all transactions
 
 ✅ **User Management**
@@ -170,12 +172,23 @@ The seeded database includes 4 demo users with different roles:
    - Once approved, lock the payroll to prevent changes
    - Locked payrolls cannot be modified
 
-### Downloading Payslips
+### Downloading Payslips & Exporting Payroll
 
-1. Navigate to Payslips section
-2. Find the desired payslip
-3. Click the download icon
-4. Colorful PDF payslip will be downloaded
+1. **Individual Payslip PDF**
+   - Navigate to Payslips section
+   - Find the desired payslip
+   - Click the download icon
+   - Colorful PDF payslip will be downloaded
+
+2. **Export Full Payroll to Excel**
+   - Navigate to Payroll section
+   - Select a payroll run
+   - Click "Export to Excel"
+   - Download comprehensive Excel file with:
+     - Payroll summary sheet with all employees
+     - Detailed allowances and deductions breakdown
+     - Residential addresses for all employees
+     - Bank payment details
 
 ### Generating Reports
 
@@ -190,11 +203,12 @@ The seeded database includes 4 demo users with different roles:
 1. Navigate to Employees section
 2. Click "Add Employee" to create new employee
 3. Fill in all required fields:
-   - Personal details (NRC, DOB, gender)
+   - Personal details (NRC, DOB, gender, residential address)
    - Employment info (department, position, hire date)
    - Bank details
    - Salary and statutory numbers
 4. Add allowances and deductions as needed
+5. **Export to Excel**: Download complete employee list with all details
 
 ### Leave Management
 
@@ -225,16 +239,27 @@ The seeded database includes 4 demo users with different roles:
 
 ### Attendance & Overtime
 
-1. **Record Attendance**
+1. **Download Attendance Register Template**
    - Go to Attendance section
-   - Add attendance record (absence, lateness, sick)
-   - Enter hours worked and reason
-   - Submit for approval
+   - Click "Download Template" for desired period
+   - Template includes all active employees with columns for date, status, hours worked, overtime, etc.
 
-2. **Record Overtime**
-   - Navigate to Overtime section
-   - Add overtime entry with hours and rate multiplier
-   - Approved overtime is added to payroll calculations
+2. **Fill Attendance Offline**
+   - Open downloaded Excel file
+   - Fill in daily attendance for all employees
+   - Mark status (Present/Absent/Sick/Leave), hours worked, overtime hours, and notes
+
+3. **Import Attendance Data**
+   - Return to Attendance section
+   - Click "Import Attendance"
+   - Upload completed Excel file
+   - System automatically creates attendance records and overtime entries
+   - Review import summary showing successful imports and any errors
+
+4. **Manual Entry (Alternative)**
+   - Add individual attendance records through the UI
+   - Add overtime entries with hours and rate multiplier
+   - Submit for approval
 
 ## System Configuration
 
@@ -309,10 +334,16 @@ Manage leave entitlements:
 - `GET /api/attendance` - Get attendance records
 - `POST /api/attendance` - Create attendance record
 - `POST /api/attendance/:id/approve` - Approve attendance
+- `GET /api/attendance/template/:period` - Download attendance register template (Excel)
+- `POST /api/attendance/import` - Import attendance from Excel file (multipart/form-data)
 
 - `GET /api/overtime` - Get overtime entries
 - `POST /api/overtime` - Create overtime entry
 - `POST /api/overtime/:id/approve` - Approve overtime
+
+### Excel Export
+- `GET /api/payroll/:id/export` - Export payroll run to Excel
+- `GET /api/employees/export` - Export all employees to Excel
 
 All authenticated endpoints require `Authorization: Bearer <token>` header.
 

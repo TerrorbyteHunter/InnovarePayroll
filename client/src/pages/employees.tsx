@@ -54,6 +54,7 @@ export default function Employees() {
       dateOfBirth: "",
       gender: "Male",
       address: "",
+      residentialAddress: "",
       department: "",
       position: "",
       hireDate: new Date().toISOString().split('T')[0],
@@ -335,6 +336,38 @@ export default function Employees() {
                       </FormItem>
                     )}
                   />
+                </div>
+
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold">Address Information</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="address"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Address</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="P.O. Box or Street Address" data-testid="input-address" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="residentialAddress"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Residential Address</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="Plot 123, Kabulonga, Lusaka" data-testid="input-residential-address" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-3">

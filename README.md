@@ -405,7 +405,17 @@ Required environment variables:
 
 ## Deployment
 
-The application is configured for deployment on Replit with autoscale:
+### Cloud Deployment (Render)
+
+For deploying to Render for testing and production, see the comprehensive guide:
+**[DEPLOY_TO_RENDER.md](DEPLOY_TO_RENDER.md)**
+
+### Local and Offline Hosting
+
+For running locally or hosting on your own network/server, see:
+**[LOCAL_TESTING.md](LOCAL_TESTING.md)**
+
+The application is also configured for deployment on Replit with autoscale:
 
 ```json
 {

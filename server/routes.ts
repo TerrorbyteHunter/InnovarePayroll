@@ -437,6 +437,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/payroll/:id/unlock", authenticateToken, async (req, res) => {
+    try {
+      const payrollRun = await storage.getPayrollRun(req.params.id);
+      if (!payrollRun) {
+        return res.status(404).json({ message: "Payroll run not found" });
+      }
+
+      if (payrollRun.status !== "Locked") {
+        return res.status(400).json({ message: "Only locked payroll runs can be unlocked" });
+      }
+
+      const updated = await storage.updatePayrollRun(req.params.id, {
+        status: "Approved",
+      });
+
+      await storage.createAuditLog({
+        userId: (req as any).user.id,
+        action: "UNLOCK_PAYROLL_RUN",
+        entity: "PayrollRun",
+        entityId: updated.id,
+        beforeSnapshot: payrollRun,
+        afterSnapshot: updated,
+        metadata: null,
+      });
+
+      res.json(updated);
+    } catch (error) {
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
   // Payslip Routes
   app.get("/api/payslips", authenticateToken, async (req, res) => {
     try {
@@ -580,6 +611,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error importing attendance:", error);
       res.status(500).json({ message: "Failed to import attendance data" });
+    }
+  });
+
+  // Export attendance records to Excel
+  app.get("/api/attendance/export", authenticateToken, async (req, res) => {
+    try {
+      const employees = await storage.getEmployees();
+      let attendanceRecords = await storage.getAttendanceRecords();
+      
+      // Filter by month if provided
+      const month = req.query.month as string;
+      if (month) {
+        const [year, monthNum] = month.split('-');
+        attendanceRecords = attendanceRecords.filter(record => {
+          const recordDate = new Date(record.date);
+          return recordDate.getFullYear() === parseInt(year) && 
+                 (recordDate.getMonth() + 1) === parseInt(monthNum);
+        });
+      }
+
+      // Combine attendance with employee data
+      const recordsWithEmployees = attendanceRecords.map(record => {
+        const employee = employees.find(e => String(e.id) === record.employeeId);
+        return {
+          ...record,
+          employee
+        };
+      });
+
+      const excelGenerator = new ExcelGenerator();
+      const excelBuffer = excelGenerator.generateAttendanceExport(recordsWithEmployees);
+
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename=attendance-export-${month || 'all'}.xlsx`);
+      res.send(excelBuffer);
+    } catch (error) {
+      console.error("Error exporting attendance:", error);
+      res.status(500).json({ message: "Failed to export attendance data" });
     }
   });
 

@@ -149,6 +149,76 @@ export class ExcelGenerator {
   }
 
   /**
+   * Generate attendance export with all records
+   */
+  generateAttendanceExport(
+    recordsWithEmployees: Array<any>
+  ): Buffer {
+    const worksheetData: (string | number)[][] = [
+      // Header row
+      [
+        'Employee Number',
+        'Employee Name',
+        'Department',
+        'Date',
+        'Type',
+        'Hours Worked',
+        'Status',
+        'Reason',
+        'Notes'
+      ]
+    ];
+
+    // Add attendance records
+    recordsWithEmployees.forEach(record => {
+      const emp = record.employee;
+      worksheetData.push([
+        emp?.employeeNumber || '',
+        emp ? `${emp.firstName} ${emp.lastName}` : '',
+        emp?.department || '',
+        new Date(record.date).toISOString().split('T')[0],
+        record.type,
+        record.hoursWorked || '0',
+        record.status,
+        record.reason || '',
+        record.notes || ''
+      ]);
+    });
+
+    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+
+    // Set column widths
+    worksheet['!cols'] = [
+      { wch: 15 }, // Employee Number
+      { wch: 25 }, // Employee Name
+      { wch: 15 }, // Department
+      { wch: 12 }, // Date
+      { wch: 12 }, // Type
+      { wch: 12 }, // Hours Worked
+      { wch: 12 }, // Status
+      { wch: 30 }, // Reason
+      { wch: 30 }, // Notes
+    ];
+
+    // Style header row
+    const headerRange = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+    for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
+      const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+      if (!worksheet[cellAddress]) continue;
+      worksheet[cellAddress].s = {
+        font: { bold: true },
+        fill: { fgColor: { rgb: "4F46E5" } },
+        alignment: { horizontal: "center" }
+      };
+    }
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Attendance Records');
+
+    return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+  }
+
+  /**
    * Generate payroll export with all employee payslips
    */
   generatePayrollExport(

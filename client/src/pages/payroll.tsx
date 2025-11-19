@@ -19,7 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, FileText, Check, Lock, Eye } from "lucide-react";
+import { Plus, FileText, Check, Lock, Eye, Unlock, Download } from "lucide-react";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
@@ -97,6 +97,19 @@ export default function Payroll() {
     },
   });
 
+  const unlockMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return apiRequest("POST", `/api/payroll/${id}/unlock`, undefined);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/payroll"] });
+      toast({ title: "Payroll unlocked successfully" });
+    },
+    onError: () => {
+      toast({ title: "Failed to unlock payroll", variant: "destructive" });
+    },
+  });
+
   const onSubmit = async (data: InsertPayrollRun) => {
     createMutation.mutate(data);
   };
@@ -116,6 +129,35 @@ export default function Payroll() {
       setCurrentStep("approve");
     } catch (error) {
       toast({ title: "Failed to load preview", variant: "destructive" });
+    }
+  };
+
+  const handleViewPayslips = (payrollId: string) => {
+    // Navigate to payslips page with filter for this payroll
+    window.location.href = `/payslips?payrollId=${payrollId}`;
+  };
+
+  const handleExportPayroll = async (payrollId: string) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`/api/payroll/${payrollId}/export`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!response.ok) throw new Error('Export failed');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const payroll = payrollRuns.find(p => p.id === payrollId);
+      a.download = `payroll-${payroll?.period || payrollId}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast({ title: "Payroll exported successfully" });
+    } catch (error) {
+      toast({ title: "Failed to export payroll", variant: "destructive" });
     }
   };
 
@@ -194,16 +236,40 @@ export default function Payroll() {
                             onClick={() => lockMutation.mutate(payroll.id)}
                             disabled={lockMutation.isPending}
                             data-testid={`button-lock-${payroll.id}`}
+                            title="Lock Payroll"
                           >
                             <Lock className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {payroll.status === "Locked" && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => unlockMutation.mutate(payroll.id)}
+                            disabled={unlockMutation.isPending}
+                            data-testid={`button-unlock-${payroll.id}`}
+                            title="Unlock Payroll"
+                          >
+                            <Unlock className="h-4 w-4" />
                           </Button>
                         )}
                         <Button
                           variant="ghost"
                           size="icon"
+                          onClick={() => handleViewPayslips(payroll.id)}
                           data-testid={`button-view-${payroll.id}`}
+                          title="View Payslips"
                         >
                           <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleExportPayroll(payroll.id)}
+                          data-testid={`button-export-${payroll.id}`}
+                          title="Export to Excel"
+                        >
+                          <Download className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>

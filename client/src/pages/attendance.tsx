@@ -24,7 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Calendar, Clock, CheckCircle, XCircle, AlertCircle, Plus, Filter } from "lucide-react";
+import { Calendar, Clock, CheckCircle, XCircle, AlertCircle, Plus, Filter, Download, Upload, FileSpreadsheet } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
@@ -37,7 +37,10 @@ type AttendanceFormData = z.infer<typeof insertAttendanceRecordSchema>;
 
 export default function Attendance() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [exportMonth, setExportMonth] = useState<string>(new Date().toISOString().slice(0, 7));
   const { toast } = useToast();
 
   const { data: employees = [] } = useQuery<Employee[]>({
@@ -88,8 +91,91 @@ export default function Attendance() {
     },
   });
 
+  const importMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      const token = localStorage.getItem("token");
+      const response = await fetch('/api/attendance/import', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData,
+      });
+      if (!response.ok) throw new Error('Upload failed');
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/attendance"] });
+      toast({ title: `Successfully imported ${data.created} attendance records` });
+      setIsImportDialogOpen(false);
+      setUploadFile(null);
+    },
+    onError: () => {
+      toast({ title: "Failed to import attendance file", variant: "destructive" });
+    },
+  });
+
   const onSubmit = (data: AttendanceFormData) => {
     createMutation.mutate(data);
+  };
+
+  const handleDownloadTemplate = async () => {
+    try {
+      const period = exportMonth;
+      const token = localStorage.getItem("token");
+      const response = await fetch(`/api/attendance/template/${period}`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!response.ok) throw new Error('Download failed');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `attendance-template-${period}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast({ title: "Template downloaded successfully" });
+    } catch (error) {
+      toast({ title: "Failed to download template", variant: "destructive" });
+    }
+  };
+
+  const handleExportAttendance = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const params = new URLSearchParams();
+      if (exportMonth) {
+        params.append('month', exportMonth);
+      }
+      const response = await fetch(`/api/attendance/export?${params.toString()}`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!response.ok) throw new Error('Export failed');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `attendance-export-${exportMonth || 'all'}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast({ title: "Attendance exported successfully" });
+    } catch (error) {
+      toast({ title: "Failed to export attendance", variant: "destructive" });
+    }
+  };
+
+  const handleFileUpload = () => {
+    if (!uploadFile) {
+      toast({ title: "Please select a file", variant: "destructive" });
+      return;
+    }
+    importMutation.mutate(uploadFile);
   };
 
   const getStatusBadge = (status: string) => {
@@ -187,6 +273,49 @@ export default function Attendance() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Excel Tools Card */}
+      <Card className="border-2 bg-gradient-to-br from-emerald-50 to-green-100/50 dark:from-emerald-950/50 dark:to-green-900/30">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-emerald-900 dark:text-emerald-100">
+            <FileSpreadsheet className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+            Excel Import/Export Tools
+          </CardTitle>
+          <CardDescription>Download templates, import bulk attendance, and export records to Excel</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="space-y-2">
+              <Label htmlFor="export-month">Select Month/Period</Label>
+              <Input
+                id="export-month"
+                type="month"
+                value={exportMonth}
+                onChange={(e) => setExportMonth(e.target.value)}
+                data-testid="input-export-month"
+              />
+            </div>
+            <div className="flex items-end">
+              <Button variant="outline" onClick={handleDownloadTemplate} className="w-full" data-testid="button-download-template">
+                <Download className="h-4 w-4 mr-2" />
+                Download Template
+              </Button>
+            </div>
+            <div className="flex items-end">
+              <Button variant="outline" onClick={handleExportAttendance} className="w-full" data-testid="button-export-attendance">
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                Export Attendance
+              </Button>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 pt-2 border-t">
+            <Button variant="default" onClick={() => setIsImportDialogOpen(true)} className="bg-emerald-600 hover:bg-emerald-700" data-testid="button-import-attendance">
+              <Upload className="h-4 w-4 mr-2" />
+              Import from Excel
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card className="border-2 shadow-lg">
         <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 border-b">
@@ -396,6 +525,52 @@ export default function Attendance() {
           )}
         </CardContent>
       </Card>
+
+      {/* Import Dialog */}
+      <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Import Attendance from Excel</DialogTitle>
+            <DialogDescription>
+              Upload an Excel file with attendance data. Make sure it follows the template format.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="file-upload">Select Excel File</Label>
+              <Input
+                id="file-upload"
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                data-testid="input-file-upload"
+              />
+              {uploadFile && (
+                <p className="text-sm text-muted-foreground">
+                  Selected: {uploadFile.name}
+                </p>
+              )}
+            </div>
+            <div className="bg-blue-50 dark:bg-blue-950/30 p-3 rounded-md">
+              <p className="text-sm text-blue-900 dark:text-blue-100">
+                <strong>Tip:</strong> Download the template first to ensure your Excel file has the correct format.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsImportDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleFileUpload}
+              disabled={!uploadFile || importMutation.isPending}
+              data-testid="button-upload-file"
+            >
+              {importMutation.isPending ? "Uploading..." : "Import Attendance"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

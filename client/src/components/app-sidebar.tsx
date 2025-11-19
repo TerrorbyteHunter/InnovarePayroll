@@ -9,6 +9,8 @@ import {
   Clock,
   Settings,
   LogOut,
+  UserCog,
+  Briefcase,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import {
@@ -22,60 +24,81 @@ import {
   SidebarMenuItem,
   SidebarHeader,
   SidebarFooter,
+  SidebarSeparator,
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 
-const menuItems = [
+const menuGroups = [
   {
-    title: "Dashboard",
-    url: "/",
-    icon: Home,
+    label: "Overview",
+    items: [
+      {
+        title: "Dashboard",
+        url: "/",
+        icon: Home,
+      },
+    ],
   },
   {
-    title: "Employees",
-    url: "/employees",
-    icon: Users,
+    label: "Employee Management",
+    items: [
+      {
+        title: "Employees",
+        url: "/employees",
+        icon: Users,
+      },
+      {
+        title: "Attendance",
+        url: "/attendance",
+        icon: Clock,
+      },
+      {
+        title: "Overtime",
+        url: "/overtime",
+        icon: Briefcase,
+      },
+      {
+        title: "Leave",
+        url: "/leave",
+        icon: Calendar,
+      },
+    ],
   },
   {
-    title: "Payroll",
-    url: "/payroll",
-    icon: Calculator,
+    label: "Payroll & Finance",
+    items: [
+      {
+        title: "Payroll",
+        url: "/payroll",
+        icon: Calculator,
+      },
+      {
+        title: "Payslips",
+        url: "/payslips",
+        icon: Receipt,
+      },
+      {
+        title: "Advances",
+        url: "/advances",
+        icon: DollarSign,
+      },
+      {
+        title: "Reports",
+        url: "/reports",
+        icon: FileText,
+      },
+    ],
   },
   {
-    title: "Payslips",
-    url: "/payslips",
-    icon: Receipt,
-  },
-  {
-    title: "Reports",
-    url: "/reports",
-    icon: FileText,
-  },
-  {
-    title: "Leave",
-    url: "/leave",
-    icon: Calendar,
-  },
-  {
-    title: "Advances",
-    url: "/advances",
-    icon: DollarSign,
-  },
-  {
-    title: "Attendance",
-    url: "/attendance",
-    icon: Clock,
-  },
-  {
-    title: "Overtime",
-    url: "/overtime",
-    icon: Clock,
-  },
-  {
-    title: "Settings",
-    url: "/settings",
-    icon: Settings,
+    label: "System",
+    items: [
+      {
+        title: "Settings",
+        url: "/settings",
+        icon: Settings,
+      },
+    ],
   },
 ];
 
@@ -88,47 +111,68 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar>
-      <SidebarHeader className="p-6">
-        <div className="flex items-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary">
-            <Calculator className="h-6 w-6 text-primary-foreground" />
+    <Sidebar className="border-r">
+      <SidebarHeader className="p-6 border-b bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30">
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 shadow-lg">
+            <Calculator className="h-7 w-7 text-white" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold">Innovare</h2>
-            <p className="text-xs text-muted-foreground">Payroll System</p>
+            <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
+              Innovare
+            </h2>
+            <p className="text-xs text-muted-foreground font-medium">Payroll Management</p>
           </div>
         </div>
       </SidebarHeader>
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {menuItems.map((item) => {
-                const isActive = location === item.url;
-                return (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild data-active={isActive}>
-                      <Link href={item.url}>
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+      <SidebarContent className="px-3 py-4">
+        {menuGroups.map((group, index) => (
+          <div key={group.label}>
+            <SidebarGroup>
+              <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 py-2">
+                {group.label}
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {group.items.map((item) => {
+                    const isActive = location === item.url;
+                    return (
+                      <SidebarMenuItem key={item.title}>
+                        <SidebarMenuButton 
+                          asChild 
+                          data-active={isActive}
+                          className={`
+                            transition-all duration-200 
+                            ${isActive 
+                              ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium shadow-md hover:from-blue-700 hover:to-purple-700' 
+                              : 'hover:bg-accent'
+                            }
+                          `}
+                        >
+                          <Link href={item.url} data-testid={`nav-${item.title.toLowerCase()}`}>
+                            <item.icon className={`h-4 w-4 ${isActive ? 'text-white' : ''}`} />
+                            <span>{item.title}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+            {index < menuGroups.length - 1 && <SidebarSeparator className="my-3" />}
+          </div>
+        ))}
       </SidebarContent>
-      <SidebarFooter className="p-4">
-        <div className="flex items-center gap-3 rounded-md p-2">
-          <Avatar className="h-8 w-8">
-            <AvatarFallback>AD</AvatarFallback>
+      <SidebarFooter className="p-4 border-t bg-gradient-to-br from-slate-50 to-gray-100 dark:from-slate-900/30 dark:to-gray-900/30">
+        <div className="flex items-center gap-3 rounded-lg p-2 hover-elevate">
+          <Avatar className="h-9 w-9 ring-2 ring-primary/20">
+            <AvatarFallback className="bg-gradient-to-br from-blue-600 to-purple-600 text-white font-semibold">
+              AD
+            </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">Admin User</p>
+            <p className="text-sm font-semibold truncate">Admin User</p>
             <p className="text-xs text-muted-foreground">Administrator</p>
           </div>
           <Button
@@ -136,9 +180,10 @@ export function AppSidebar() {
             size="icon"
             onClick={handleLogout}
             data-testid="button-logout"
-            className="h-8 w-8"
+            className="h-9 w-9 hover:bg-red-100 dark:hover:bg-red-900/30"
+            title="Logout"
           >
-            <LogOut className="h-4 w-4" />
+            <LogOut className="h-4 w-4 text-red-600 dark:text-red-400" />
           </Button>
         </div>
       </SidebarFooter>

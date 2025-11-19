@@ -92,6 +92,18 @@ After your service is deployed:
 
    This will create all the necessary tables in your database.
 
+3. **Seed the database** with the admin user and sample data:
+   ```bash
+   tsx server/seed.ts
+   ```
+
+   This creates:
+   - Admin user (username: `admin`, password: `password`)
+   - 3 additional demo users (payroll, hrofficer, auditor)
+   - 10 sample employees
+   - Sample payroll data for testing
+   - Leave policies and statutory configuration
+
 ## Step 5: Access Your Application
 
 1. Your app will be available at: `https://innovare-payroll.onrender.com` (or your custom domain)

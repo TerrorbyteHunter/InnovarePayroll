@@ -93,6 +93,24 @@ npm run db:push
 
 You should see output confirming tables were created successfully.
 
+### Step 4.5: Seed the Database (Important!)
+
+Seed the database with admin user and sample data:
+
+```bash
+tsx server/seed.ts
+```
+
+This creates:
+- **Admin user** (username: `admin`, password: `password`)
+- 3 additional demo users (payroll, hrofficer, auditor)
+- 10 sample employees with complete data
+- Sample payroll runs and payslips
+- Leave policies and requests
+- Statutory configuration for Zambian taxes
+
+**⚠️ Without this step, you won't be able to login!**
+
 ### Step 5: Start the Application
 
 ```bash

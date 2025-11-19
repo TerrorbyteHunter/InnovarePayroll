@@ -1,7 +1,6 @@
 import {
   Home,
   Users,
-  Calculator,
   FileText,
   Receipt,
   Calendar,
@@ -13,6 +12,7 @@ import {
   Briefcase,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
+import logoUrl from "@assets/Innovare logo_1763555308154.png";
 import {
   Sidebar,
   SidebarContent,
@@ -114,8 +114,8 @@ export function AppSidebar() {
     <Sidebar className="border-r">
       <SidebarHeader className="p-6 border-b bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30">
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 shadow-lg">
-            <Calculator className="h-7 w-7 text-white" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-white dark:bg-gray-800 shadow-lg p-1.5">
+            <img src={logoUrl} alt="Innovare Logo" className="h-full w-full object-contain" />
           </div>
           <div>
             <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">

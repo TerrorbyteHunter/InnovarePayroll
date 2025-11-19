@@ -9,7 +9,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, type LoginCredentials } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Calculator, TrendingUp, Users, DollarSign } from "lucide-react";
+import { TrendingUp, Users, DollarSign, CalendarDays } from "lucide-react";
+import logoUrl from "@assets/Innovare logo_1763555308154.png";
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -56,8 +57,8 @@ export default function Login() {
         {/* Left side - Branding */}
         <div className="hidden md:block space-y-6 text-center md:text-left">
           <div className="flex justify-center md:justify-start">
-            <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-purple-600 shadow-xl">
-              <Calculator className="h-12 w-12 text-white" />
+            <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white dark:bg-gray-800 shadow-xl p-2">
+              <img src={logoUrl} alt="Innovare Logo" className="h-full w-full object-contain" />
             </div>
           </div>
           <div className="space-y-4">
@@ -117,7 +118,7 @@ export default function Login() {
               <CardContent className="pt-6">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-pink-100 dark:bg-pink-900/30">
-                    <Calculator className="h-5 w-5 text-pink-600 dark:text-pink-400" />
+                    <CalendarDays className="h-5 w-5 text-pink-600 dark:text-pink-400" />
                   </div>
                   <div>
                     <p className="text-sm font-semibold">Attendance</p>
@@ -133,8 +134,8 @@ export default function Login() {
         <Card className="w-full shadow-2xl border-2">
           <CardHeader className="space-y-4 text-center">
             <div className="flex justify-center md:hidden">
-              <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 shadow-lg">
-                <Calculator className="h-10 w-10 text-white" />
+              <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white dark:bg-gray-800 shadow-lg p-2">
+                <img src={logoUrl} alt="Innovare Logo" className="h-full w-full object-contain" />
               </div>
             </div>
             <div>
